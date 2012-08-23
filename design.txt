@@ -1,0 +1,42 @@
+
+Konsept:
+Nodeid: user@network
+
+-Alle noder hoster alle id'er fra og med seg selv til neste nabo
+-Alle noder lytter på heartbeat fra sine tre etterfølgende noder
+-Alle noder sender hearbeat til sin foregående node
+-Heartbeat inneholder sesjonshistorikk fra seg selv og de to neste naboene
+-Dersom en heartbeat uteblir sender noden request hosting start melding via pastry
+
+Hvordan håndtere duplikat nodeId, eksempelvis at en bruker starter applikasjonen fra en annen maskin?
+
+
+Kode:
+Moduler:
+*IRC:
+-GUI client
+-Backup client
+
+*Pastry:
+-Application
+    -Detektere at noder forsvinner
+    -Oppdatere naboer (sende heartbeat / loggmeldinger)
+-Meldinger
+    -Heartbeat med logg
+    -LoggStatus
+
+
+Tester:
+Scenario 1: Base case
+-Start en ring med fem klienter og hver sin irc-sesjon
+-Alle klienter joiner hver sin kanal og en felles kanal
+-Alle klienter prater litt
+-To klienter faller ut
+-Alle klienter prater litt
+-En klient kommer tilbake
+
+
+Scenario 2: Churn
+
+
+Scenario 3:

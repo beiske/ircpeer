@@ -14,7 +14,7 @@ import rice.pastry.{PastryNode, PastryNodeFactory, NodeIdFactory}
  */
 
 
-class BackupNode(bindPort: Int, bootAdress: InetSocketAddress, env: Environment) {
+class PastryDemo(bindPort: Int, bootAdress: InetSocketAddress, env: Environment) {
 
   // Generate the NodeIds Randomly
   val nidFactory :NodeIdFactory = new RandomNodeIdFactory(env);
@@ -35,9 +35,9 @@ class BackupNode(bindPort: Int, bootAdress: InetSocketAddress, env: Environment)
       node.wait(500);
 
       // abort if can't join
-      //if (node.joinFailed()) {
-      //  throw new IOException("Could not join the FreePastry ring.  Reason:" + node.joinFailedReason());
-      //}
+      if (node.joinFailed()) {
+        throw new IOException("Could not join the FreePastry ring.  Reason:" + node.joinFailedReason());
+      }
     }
   }
 
@@ -45,7 +45,7 @@ class BackupNode(bindPort: Int, bootAdress: InetSocketAddress, env: Environment)
 }
 
 
-object BackupNode extends App {
+object PastryDemo extends App {
   // Loads pastry settings
   val env = new Environment();
 
@@ -62,7 +62,7 @@ object BackupNode extends App {
     val bootAddress = new InetSocketAddress(host, port);
 
     // launch our node!
-    val dt = new BackupNode(bindPort, bootAddress, env);
+    val dt = new PastryDemo(bindPort, bootAddress, env);
   } catch {
     case e: Exception => {
       // remind user how to use

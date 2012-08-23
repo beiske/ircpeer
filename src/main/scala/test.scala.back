@@ -1,0 +1,47 @@
+/**
+ * Created with IntelliJ IDEA.
+ * User: beiske
+ * Date: 14.08.12
+ * Time: 20:37
+ * To change this template use File | Settings | File Templates.
+ */
+
+import scala.actors._
+import scala.actors.Actor._
+import util.Random
+
+class TimerActor(val timeout: Long,val who: Actor,val reply: Any) extends Actor {
+  def act {
+    loop {
+      reactWithin(timeout) {
+        case TIMEOUT => who ! "Got: " + reply
+        case x:String => who ! "Got: " + x
+      }
+    }
+  }
+}
+
+val a = actor {
+  loop {
+    react {
+      case x => println(x)
+    }
+  }
+}
+
+val t = new TimerActor(10000, a, "Timed out")
+
+a.start
+t.start
+
+
+new Thread(new Runnable {
+  override def run() {
+    while (true) {
+      val timeout = math.abs(Random.nextLong()%20000)
+      println("Next message in: " + timeout)
+      Thread.sleep(timeout)
+      t ! "What you are waiting for"
+    }
+  }
+}).start()

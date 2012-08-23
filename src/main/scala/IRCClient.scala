@@ -1,18 +1,30 @@
+import java.net.InetAddress
 import org.jibble.pircbot.PircBot
 import scala.util.Random
 
-class IRCClient(user :UserID, channels :Set[String]) extends PircBot {
+class IRCClient(user :UserID, channels :Set[String], log: Log) extends PircBot {
   setName(user.nick)
-  connect(IRCClient.getRandomServer(user.network))
+  val server = IRCClient.getRandomServer(user.network)
+  println("Connecting to : " + server + " for " + user)
+  connect(server)
+  println("Joining channels: " + channels)
   channels.foreach(joinChannel(_))
 
   override def onMessage (channel: String, sender: String, login: String, hostname: String, message: String) {
-    println("channel: " + channel + " sender: " + sender + " login: " + login + " hostname: " + hostname + "message: " + message)
+    println("channel: " + channel + " sender: " + sender + " login: " + login + " hostname: " + hostname + " message: " + message)
+    log.message(channel, sender, message)
   }
+
+  def stop() : Log = {
+    disconnect()
+    log
+  }
+
+  def getLog = log
 }
 
-object IRCClient extends App {
-  val servers = Map(
+object IRCClient {
+  val servers : Map[String, List[String]] = Map(
     "EFnet" -> List(
       "irc.homelien.no",
       "efnet.cs.hut.fi",
@@ -29,7 +41,7 @@ object IRCClient extends App {
   )
 
   def getRandomServer(network: String):String = {
-    val serversForNetwork = servers(network)
+    val serversForNetwork = servers(network).filter(InetAddress.getByName(_).isReachable(100))
     val randomIndex = new Random().nextInt(serversForNetwork.length)
     return serversForNetwork(randomIndex)
   }
