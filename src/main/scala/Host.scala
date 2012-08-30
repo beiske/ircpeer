@@ -22,24 +22,35 @@ class Host(pastry : PastryActor) extends Actor {
             }))
             new SingleEventTimer(Host.milliSecondsBetweenHeartBeats, this).start()
           }
+          case RequestTransfer(senderId) => {
+            val clientsToTransfer = clients.filterKeys(_.getPastryId().isBetween(senderId, pastry.endpoint.getId))
+            clientsToTransfer.foreach( (tuple : Tuple2[UserID, IRCClient]) => {
+            sender ! RequestHostingStart(tuple._1, Some(stopClient(tuple._1)), tuple._2.getChannelSet)
+
+          })
+          }
         }
       }
     }
 
   def startClient(user: UserID, log: Option[Log], channel :Set[String]) {
-    val mergedLog = log.getOrElse(new Log())
-    if (clients.contains(user)) {
-      //TODO don't restart for duplicate request
-      mergedLog.merge(clients(user).stop())
+    val client = if (clients.contains(user)) {
+      clients(user)
+    } else {
+      val client = new IRCClient(user, channel)
+      clients += user -> client
+      client
     }
-    val client = new IRCClient(user, channel, mergedLog)
-    clients += user -> client
+    client.start(log)
+
 
   }
 
   def stopClient(user :UserID) :Log = {
-    clients(user)
-    new Log()
+    val client = clients(user)
+    val log = client.stop()
+    clients = clients - user
+    log
   }
 }
 

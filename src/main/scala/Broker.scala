@@ -18,9 +18,11 @@ class PastryActor(node: Node) extends Application with Actor {
   }
 
   override def update(nodeHandle: NodeHandle, joined: Boolean) {
-//    if (joined) {
+    if (joined) {
+      new NodeHandleActorAdaptor(nodeHandle, host, RequestTransfer(nodeHandle.getId.asInstanceOf[rice.pastry.Id]), endpoint).start()
+
 //      backupNodes += nodeHandle
-//    } //else {
+    } //else {
     // backupNodes -= nodeHandle
     //}
   }

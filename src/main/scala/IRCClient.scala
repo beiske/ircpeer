@@ -2,13 +2,23 @@ import java.net.InetAddress
 import org.jibble.pircbot.PircBot
 import scala.util.Random
 
-class IRCClient(user :UserID, channels :Set[String], log: Log) extends PircBot {
+class IRCClient(user :UserID, channels :Set[String]) extends PircBot {
+  val log = new Log()
   setName(user.nick)
-  val server = IRCClient.getRandomServer(user.network)
-  println("Connecting to : " + server + " for " + user)
-  connect(server)
-  println("Joining channels: " + channels)
-  channels.foreach(joinChannel(_))
+
+  def start(previousLog : Option[Log]) {
+    if (previousLog.isDefined) {
+      log.merge(previousLog.get)
+    }
+    if (!isConnected) {
+      val server = IRCClient.getRandomServer(user.network)
+      println("Connecting to : " + server + " for " + user)
+      connect(server)
+      println("Joining channels: " + channels)
+      channels.foreach(joinChannel(_))
+    }
+  }
+
 
   override def onMessage (channel: String, sender: String, login: String, hostname: String, message: String) {
     println("channel: " + channel + " sender: " + sender + " login: " + login + " hostname: " + hostname + " message: " + message)
@@ -19,6 +29,8 @@ class IRCClient(user :UserID, channels :Set[String], log: Log) extends PircBot {
     disconnect()
     log
   }
+
+  def getChannelSet = channels
 
   def getLog = log
 }

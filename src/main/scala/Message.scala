@@ -32,10 +32,11 @@ case class UserID(nick :String, network :String) {
 class Log() {
   var channelEvents :Map[String, List[LogMessage]] = Map()
 
-  def merge(other : Log) : Log = {
-    val result = new Log()
-    result.channelEvents = mergeMap(List(other.channelEvents, channelEvents))(mergeLogMessages(_, _))
-    result
+  def merge(other : Log) {
+    //val result = new Log()
+    //result.
+    channelEvents = mergeMap(List(other.channelEvents, channelEvents))(mergeLogMessages(_, _))
+    //result
   }
 
   private def mergeLogMessages(a: List[LogMessage], b: List[LogMessage]) : List[LogMessage] = {
@@ -84,6 +85,7 @@ case class RequestHostingStart(override val user :UserID, log : Option[Log], cha
 
 }
 
+case class RequestTransfer(id : Id)
 
 case class RequestHostingEnd(override val user :UserID) extends MessageToUserResponsible(user)
 
