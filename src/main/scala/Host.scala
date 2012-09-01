@@ -37,7 +37,7 @@ class Host(pastry : PastryActor) extends Actor {
     val client = if (clients.contains(user)) {
       clients(user)
     } else {
-      val client = new IRCClient(user, channel)
+      val client = new LoggingIRCClient(user, channel)
       clients += user -> client
       client
     }

@@ -2,7 +2,7 @@ import java.net.InetAddress
 import org.jibble.pircbot.PircBot
 import scala.util.Random
 
-class IRCClient(user :UserID, channels :Set[String]) extends PircBot {
+class LoggingIRCClient(user :UserID, channels :Set[String]) extends PircBot with IRCClient {
   val log = new Log()
   setName(user.nick)
 
@@ -33,6 +33,16 @@ class IRCClient(user :UserID, channels :Set[String]) extends PircBot {
   def getChannelSet = channels
 
   def getLog = log
+}
+
+trait IRCClient {
+  def getLog : Log
+
+  def start(log : Option[Log])
+
+  def stop() : Log
+
+  def getChannelSet : Set[String]
 }
 
 object IRCClient {

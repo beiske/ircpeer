@@ -3,10 +3,19 @@ Konsept:
 Nodeid: user@network
 
 -Alle noder hoster alle id'er fra og med seg selv til neste nabo
--Alle noder lytter på heartbeat fra sine tre etterfølgende noder
+-Alle noder lytter på heartbeat fra sin etterfølgende node
 -Alle noder sender hearbeat til sin foregående node
--Heartbeat inneholder sesjonshistorikk fra seg selv og de to neste naboene
+-Heartbeat inneholder sesjonshistorikk fra seg selv
 -Dersom en heartbeat uteblir sender noden request hosting start melding via pastry
+
+-Når pastry oppdager en ny node så lager broker en RequestTransfer med denne som avsender
+-RequestTransfer håndteres ved at Host sjekker sine klienter mot avsenders ID og dersom noen sokner til avsender sender host requesttransfer for hver av disse
+
+Ulike årsaker til at Heartbeat uteblir:
+-Noden er død
+-Brukeren hostes av en annen node (RequestTransfer)
+-Hosting er avsluttet
+
 
 Hvordan håndtere duplikat nodeId, eksempelvis at en bruker starter applikasjonen fra en annen maskin?
 

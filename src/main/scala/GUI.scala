@@ -1,12 +1,6 @@
 import java.net.{InetAddress, InetSocketAddress}
 
-/**
- * Created with IntelliJ IDEA.
- * User: beiske
- * Date: 13.08.12
- * Time: 21:07
- * To change this template use File | Settings | File Templates.
- */
+
 
 class Controller {
   var listenPort = 0
