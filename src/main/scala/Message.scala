@@ -1,5 +1,6 @@
 import java.net.{InetAddress, InetSocketAddress}
 import java.util
+import org.jibble.pircbot.User
 import rice.environment.Environment
 import rice.p2p.commonapi.Message
 import rice.pastry.Id
@@ -30,16 +31,13 @@ case class UserID(nick :String, network :String) {
 }
 
 class Log() {
-  var channelEvents :Map[String, List[LogMessage]] = Map()
+  var channelEvents :Map[String, List[LogEntry]] = Map()
 
   def merge(other : Log) {
-    //val result = new Log()
-    //result.
     channelEvents = mergeMap(List(other.channelEvents, channelEvents))(mergeLogMessages(_, _))
-    //result
   }
 
-  private def mergeLogMessages(a: List[LogMessage], b: List[LogMessage]) : List[LogMessage] = {
+  private def mergeLogMessages(a: List[LogEntry], b: List[LogEntry]) : List[LogEntry] = {
     b match {
       case Nil => a
       case _ =>
@@ -55,10 +53,66 @@ class Log() {
   }
 
   def message(channel: String, nick: String, message: String) {
-    channelEvents += channel -> (LogMessage(nick, message) :: channelEvents.getOrElse(channel, List()))
+    addEntry(channel, LogMessage(nick, message))
   }
 
+  def users(channel: String, users: Array[User]) {
+    addEntry(channel, LogUserInfo(users.map(_.toString)))
+  }
 
+  def joined(channel : String, user: String) {
+    addEntry(channel, LogUserJoined(user))
+  }
+
+  def action(channel: String, user: String, action: String) {
+    addEntry(channel, LogUserJoined(user))
+  }
+
+  def notice(channel: String, user: String, notice: String) {
+    addEntry(channel, LogNotice(user, notice))
+  }
+
+  def part(channel: String, user:String) {
+    addEntry(channel, LogPart(user))
+  }
+
+  def nickChange(oldNick: String, newNick: String) {
+    addGlobalEntry(LogNickChange(oldNick, newNick))
+  }
+
+  def kick(channel: String, kickerNick: String, recipientNick:String, reason:String ) {
+    addEntry(channel, LogKick(kickerNick, recipientNick, reason))
+  }
+
+  def quit(nick: String, reason : String) {
+    addGlobalEntry(LogQuit(nick, reason))
+  }
+
+  def topic(channel: String, topic: String) {
+    addEntry(channel, LogTopic(topic))
+  }
+
+  def mode(channel: String, sourceNick:String, mode:String) {
+    addEntry(channel, LogMode(sourceNick, mode))
+  }
+
+  def invite(sourceNick: String, channel:String) {
+    addEntry(sourceNick, LogInvite(sourceNick, channel ))
+  }
+
+  def addGlobalEntry(entry: LogEntry) {
+    for (channel <- getChannels()) {
+      addEntry(channel, entry)
+    }
+  }
+
+  def addEntry(channel: String, entry: LogEntry) {
+    channelEvents += channel -> (entry :: channelEvents.getOrElse(channel, List()))
+  }
+
+  def getChannels() : Set[String] = {
+    channelEvents.keySet
+  }
 
   def mergeMap[A, B](ms: List[Map[A, B]])(f: (B, B) => B): Map[A, B] = {
     (Map[A, B]() /: (for (m <- ms; kv <- m) yield kv)) {
@@ -68,10 +122,23 @@ class Log() {
   }
 }
 
-
-case class LogMessage(nick: String, message:String) {
+abstract class LogEntry() {
   val date = new util.Date()
 }
+case class LogMessage(nick: String, message:String) extends LogEntry
+case class LogUserInfo(users: Array[String]) extends LogEntry
+case class LogUserJoined(user: String) extends LogEntry
+case class LogAction(user: String, action: String) extends LogEntry
+case class LogNotice(user: String, notice: String) extends LogEntry
+case class LogPart(user:String) extends LogEntry
+case class LogNickChange(oldNick : String, newNick: String) extends LogEntry
+case class LogKick(kickerNick: String, recipient: String, reason: String) extends LogEntry
+case class LogQuit(user : String, reason: String) extends LogEntry
+case class LogTopic(topic: String) extends LogEntry
+case class LogMode(user: String, mode: String) extends LogEntry
+case class LogInvite(senderNick: String, channel: String) extends LogEntry
+
+
 
 case class HeartBeat(logs: Map[UserID, Log]) extends Message {
   override def getPriority :Int = {
@@ -98,8 +165,6 @@ object Factories {
   val randomNodeIdFactory = new RandomNodeIdFactory(environment)
 
   def createNode(id: Id) : PastryNode = {
-
-    //val bootSocket = new InetSocketAddress(InetAddress.getByName(bootAddress), bootPort)
     val node = nodeFactory.newNode(id)
     node
   }
