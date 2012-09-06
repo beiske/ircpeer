@@ -4,9 +4,12 @@ object ShellDemo extends App {
 
 
   val a = new Actor() {
-    def act() {
-      react {
-        case x: String => System.err.print("Hello: " + x)
+    override def act() {
+      loop {
+        react {
+          case "exit\n" => System.exit(0) //Does not work..
+          case x: String => System.err.print("Hello: " + x)
+        }
       }
     }
   }
