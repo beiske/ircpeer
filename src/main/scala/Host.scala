@@ -36,6 +36,7 @@ class Host(pastry : PastryActor) extends Actor {
   def startClient(user: UserID, log: Option[Log], channel :Set[String]) {
     val client = if (clients.contains(user)) {
       clients(user)
+      //TODO handle updated channel set
     } else {
       val client = new LoggingIRCClient(user, channel)
       clients += user -> client

@@ -1,6 +1,7 @@
 import actors.Actor
 import collection.JavaConverters.asJavaCollectionConverter
 import java.io.InputStreamReader
+import java.net.InetSocketAddress
 import java.nio.CharBuffer
 import java.nio.charset.Charset
 import java.util.regex.Pattern
@@ -23,6 +24,13 @@ class Client(user : UserID) extends PircBot with IRCClient {
   val shell = new Shell(new InputHandler(this))
 
 
+  val server = IRCClient.getRandomServer(user.network)
+
+  println("Connecting to : " + server + " for " + user)
+  connect(server)
+  println("Connected")
+
+
   override def getLog = new Log()
 
   def println(line : String) {
@@ -37,8 +45,9 @@ class Client(user : UserID) extends PircBot with IRCClient {
   def selectChannel(channel: String) {
     if (!getChannels.contains(channel)) {
       joinChannel(channel)
-    } else {
+    } else if (channel != currentChannel) {
       currentChannel = channel
+      shell.setPrompt(channel)
     }
   }
 
@@ -55,6 +64,7 @@ class Client(user : UserID) extends PircBot with IRCClient {
   override def onJoin(channel :String, sender: String, login: String, hostname:String) {
     if (sender == user.nick) {
       currentChannel = channel
+      shell.setPrompt(channel)
     }
     println(sender + " joined " + channel)
   }
@@ -130,6 +140,7 @@ class InputHandler(client: Client) extends Actor {
 
   def parseLine(line: String) {
     if (line.startsWith("/")) {
+      client.println("About to match command: " + line)
       line match {
         case Client.join(channel) => {
           client.selectChannel(channel)
@@ -196,15 +207,18 @@ class InputHandler(client: Client) extends Actor {
         case Client.kick(channel, nick) => {
           client.kick(channel, nick)
         }
-
+        case line : String => client.println("Unknown command: " + line)
       }
     }
 
   }
+  start()
 }
 
 
-
+/**
+ * Usage: scala Client <username> <network>
+ */
 object Client extends App {
   private def createSingleArgPattern(command : String) : Regex = {
     ("^/"+command+" (.+)$").r
@@ -234,8 +248,10 @@ object Client extends App {
   val me = createSingleArgPattern("me")
 
 
-
- // val localClient = new Client()
+  if (args.length >= 3) {
+    Factories.setBindPort(Integer.valueOf(args(2)))
+  }
+  new Client(new UserID(args(0), args(1)))
 
 }
 
@@ -265,7 +281,9 @@ class Shell(inputHandler : Actor) {
         val nextChar = input.read()
 
         if (nextChar == -1 || nextChar == newLine) {
-          inputHandler ! (buffer + "\n")
+          val data = (buffer)
+          //println("Sending data: " + data)
+          inputHandler ! data
           buffer = ""
           print(prompt)
         } else {

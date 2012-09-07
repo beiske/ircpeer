@@ -2,11 +2,12 @@ import actors.{TIMEOUT, Actor}
 import actors.Actor._
 import collection.mutable
 import rice.p2p.commonapi._
+import rice.pastry.PastryNode
 
 /**
  * This class bridges Pastry communication and
  */
-class PastryActor(node: Node) extends Application with Actor {
+class PastryActor(node: PastryNode) extends Application with Actor {
   var host: Host = null
   val endpoint = node.buildEndpoint(this, "ircpeer")
   //val backupNodes: mutable.PriorityQueue[NodeHandle] = new mutable.PriorityQueue()
@@ -67,9 +68,10 @@ class PastryActor(node: Node) extends Application with Actor {
 
   def registerHost(host: Host) {
     this.host = host
-    endpoint.register()
     host.start()
     start()
+    endpoint.register()
+    node.boot(Factories.bootAddress)
     host ! TIMEOUT
   }
 }

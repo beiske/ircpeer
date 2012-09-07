@@ -159,9 +159,10 @@ case class RequestHostingEnd(override val user :UserID) extends MessageToUserRes
 object Factories {
   val environment = new Environment()
   val idFactory = new PastryIdFactory(environment)
-  val bootAddress = "localhost"
-  val bootPort = 9000
-  val nodeFactory :PastryNodeFactory = new SocketPastryNodeFactory(null, InetAddress.getLocalHost, bootPort, environment);
+  var bindPort = 9000
+  val bootAddress = new InetSocketAddress(InetAddress.getLocalHost, 9000)
+
+  var nodeFactory :PastryNodeFactory = new SocketPastryNodeFactory(null, InetAddress.getLocalHost, bindPort, environment);
   val randomNodeIdFactory = new RandomNodeIdFactory(environment)
 
   def createNode(id: Id) : PastryNode = {
@@ -169,5 +170,8 @@ object Factories {
     node
   }
 
-
+  def setBindPort(bindPort : Int) {
+    this.bindPort = bindPort
+    nodeFactory = new SocketPastryNodeFactory(null, InetAddress.getLocalHost, bindPort, environment);
+  }
 }

@@ -7,6 +7,7 @@ class LoggingIRCClient(user :UserID, channels :Set[String]) extends PircBot with
   setName(user.nick)
   setVerbose(true)
 
+
   def start(previousLog : Option[Log]) {
     if (previousLog.isDefined) {
       log.merge(previousLog.get)
@@ -105,7 +106,7 @@ object IRCClient {
     "EFnet" -> List(
       "irc.homelien.no",
       "efnet.cs.hut.fi",
-      "irc.efnet.no",
+      //"irc.efnet.no",
       "irc.underworld.no",
       "irc.efnet.nl"),
     "Undernet" -> List(
