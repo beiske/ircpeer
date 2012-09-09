@@ -57,7 +57,12 @@ class PastryActor(node: PastryNode) extends Application with Actor {
   def getHeartBeatRecipient() : Option[NodeHandle] = {
     val neighbours = endpoint.neighborSet(4)
     if (neighbours.size > 1) {
-      Some((0 until neighbours.size()).map(neighbours.getHandle(_)).filter(_.getId.clockwise(node.getId)).min)
+      val beforeAndAfter = (0 until neighbours.size()).map(neighbours.getHandle(_)).partition(_.getId.clockwise(node.getId))
+      if (beforeAndAfter._1.length > 0) {
+        Some(beforeAndAfter._1.min)
+      } else {
+        Some(beforeAndAfter._2.max)
+      }
     } else if (neighbours.size == 1) {
       Some(neighbours.getHandle(0))
     } else {

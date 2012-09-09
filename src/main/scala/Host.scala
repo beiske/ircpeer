@@ -8,18 +8,21 @@ class Host(pastry : PastryActor) extends Actor {
         react {
           case RequestHostingStart(user, log, channel) => startClient(user, log, channel)
           case RequestHostingEnd(user) => sender ! stopClient(user)
-          case HeartBeat(logs) => for ((user, log) <- logs) {
-            if (!watchers.isDefinedAt(user)) {
-              val watcher = new WatchDog(user, pastry);
-              watcher.start()
-              watchers += user -> watcher
+          case HeartBeat(logs, channels) =>
+            for ((user, channelSet) <- channels) {
+              if (!watchers.isDefinedAt(user) || watchers(user).getState == Actor.State.Terminated) {
+                val watcher = new WatchDog(user, pastry);
+                watcher.start()
+                watchers += user -> watcher
+              }
+              watchers(user) ! (logs(user), channelSet)
             }
-            watchers(user) ! log
-          }
           case TIMEOUT => {
             pastry ! HeartBeat(clients.mapValues((client : IRCClient) => {
               client.getLog
-            }))
+            }).map(identity), clients.mapValues((client : IRCClient) => {
+              client.getChannelSet
+            }).map(identity))
             new SingleEventTimer(Host.milliSecondsBetweenHeartBeats, this).start()
           }
           case RequestTransfer(senderId) => {
@@ -61,11 +64,20 @@ object Host {
 
 class WatchDog(user : UserID, pastry: PastryActor) extends Actor {
   var log : Option[Log] = None
+  var channels : Set[String] = null
   def act {
     loop {
-      reactWithin(Host.milliSecondsBetweenHeartBeats*2) {
-        case TIMEOUT => pastry ! RequestHostingStart(user, log, Set())
-        case logMessage:Log => log = Some(logMessage)
+      reactWithin(Host.milliSecondsBetweenHeartBeats*10) {
+        case TIMEOUT => {
+          println("Timeout, requesting hosting for: " + user + " " + channels)
+          pastry ! RequestHostingStart(user, log, channels)
+          exit()
+        }
+        case (logMessage:Log, channelSet:Set[String] )=>{
+          log = Some(logMessage)
+          channels = channelSet
+        }
+        case x => println("Got:" + x)
       }
     }
   }

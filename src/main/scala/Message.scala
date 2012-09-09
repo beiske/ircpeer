@@ -30,7 +30,7 @@ case class UserID(nick :String, network :String) {
   }
 }
 
-class Log() {
+class Log() extends Serializable {
   var channelEvents :Map[String, List[LogEntry]] = Map()
 
   def merge(other : Log) {
@@ -122,7 +122,7 @@ class Log() {
   }
 }
 
-abstract class LogEntry() {
+abstract class LogEntry() extends Serializable {
   val date = new util.Date()
 }
 case class LogMessage(nick: String, message:String) extends LogEntry
@@ -140,7 +140,7 @@ case class LogInvite(senderNick: String, channel: String) extends LogEntry
 
 
 
-case class HeartBeat(logs: Map[UserID, Log]) extends Message {
+case class HeartBeat(logs: Map[UserID, Log], channels : Map[UserID, Set[String]]) extends Message {
   override def getPriority :Int = {
     Message.LOW_PRIORITY
   }
