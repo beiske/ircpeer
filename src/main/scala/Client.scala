@@ -257,6 +257,10 @@ object Client extends App {
   val changeChannel = createSingleArgPattern("changeChannel")
   val me = createSingleArgPattern("me")
 
+  if (args.length >= 7) {
+    Factories.environment.getParameters().setInetSocketAddress("external_address", new InetSocketAddress(InetAddress.getByName(args(5)), Integer.valueOf(args(6))))
+  }
+
   if (args.length >= 5) {
     Factories.bootAddress = new InetSocketAddress(InetAddress.getByName(args(3)), Integer.valueOf(args(4)))
   }
