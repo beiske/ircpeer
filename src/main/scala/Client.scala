@@ -258,7 +258,7 @@ object Client extends App {
   val me = createSingleArgPattern("me")
 
   if (args.length >= 5) {
-    Factories.bootAddress = new InetSocketAddress(InetAddress.getByName(args(3), Integer.valueOf(args(4))))
+    Factories.bootAddress = new InetSocketAddress(InetAddress.getByName(args(3)), Integer.valueOf(args(4)))
   }
   if (args.length >= 3) {
     Factories.setBindPort(Integer.valueOf(args(2)))
