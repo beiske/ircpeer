@@ -37,9 +37,18 @@ class Client(user : UserID) extends PircBot with IRCClient {
     shell.println(line)
   }
 
-  override def start(log : Option[Log]) = {
-    //TODO Show history
-    println("Got loghistory")
+  override def start(logOption : Option[Log]) = {
+    for (log <- logOption) {
+      println("Got loghistory")
+      for ((channel, events)<-log.channelEvents) {
+        for (event <- events.reverse) {
+          println(event.toString(channel))
+        }
+      }
+    }
+
+
+
   }
 
   def selectChannel(channel: String) {
@@ -94,7 +103,7 @@ class Client(user : UserID) extends PircBot with IRCClient {
   }
 
   override def onKick(channel: String, kickerNick: String, kickerLogin: String, kickerHostname: String, recipientNick: String, reason: String) {
-    println(recipientNick + " was kicked by " + kickerLogin + " becuase: " + reason)
+    println(channel + ": " + recipientNick + " was kicked by " + kickerLogin + " becuase: " + reason)
   }
 
   override def onQuit(sourceNick: String, sourceLogin: String, sourceHostname: String, reason: String) {
@@ -140,7 +149,7 @@ class InputHandler(client: Client) extends Actor {
 
   def parseLine(line: String) {
     if (line.startsWith("/")) {
-      client.println("About to match command: " + line)
+      //client.println("About to match command: " + line)
       line match {
         case Client.join(channel) => {
           client.selectChannel(channel)
@@ -218,6 +227,7 @@ class InputHandler(client: Client) extends Actor {
 
 /**
  * Usage: scala Client <username> <network>
+ *    or: scala Client <username> <network> <localPort>
  */
 object Client extends App {
   private def createSingleArgPattern(command : String) : Regex = {
@@ -251,8 +261,11 @@ object Client extends App {
   if (args.length >= 3) {
     Factories.setBindPort(Integer.valueOf(args(2)))
   }
-  new Client(new UserID(args(0), args(1)))
-
+  if (args.length >= 2) {
+    new Client(new UserID(args(0), args(1)))
+  } else {
+    println("Usage: scala Client <username> <network>")
+  }
 }
 
 /**
@@ -270,22 +283,23 @@ class Shell(inputHandler : Actor) {
   }
 
   def println(line : String) {
-    print("\r" + line + (" " * scala.math.max(prompt.size + buffer.size - line.size, 0))+ "\n" + prompt + buffer)
+    print("\r" + line + (" " * scala.math.max(prompt.size + buffer.size + 2 - line.size, 0))+ "\n" + prompt + buffer)
   }
 
   new Thread(new Runnable {
     def run() {
       val input = new InputStreamReader(System.in)
       val newLine = '\n'.toInt
+      val backSpace = 127
       while (true) {
         val nextChar = input.read()
-
         if (nextChar == -1 || nextChar == newLine) {
-          val data = (buffer)
-          //println("Sending data: " + data)
-          inputHandler ! data
+          inputHandler ! buffer
           buffer = ""
           print(prompt)
+        } else if (nextChar == backSpace && buffer.size > 0) {
+          buffer = buffer.substring(0, buffer.size -1)
+          print("\r"+ prompt + buffer)
         } else {
           buffer += nextChar.toChar
         }
