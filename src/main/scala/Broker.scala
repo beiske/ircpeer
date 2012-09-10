@@ -20,18 +20,25 @@ class PastryActor(node: PastryNode) extends Application with Actor {
 
   override def update(nodeHandle: NodeHandle, joined: Boolean) {
     if (joined) {
-      new NodeHandleActorAdaptor(nodeHandle, host, RequestTransfer(nodeHandle.getId.asInstanceOf[rice.pastry.Id]), endpoint).start()
-
+      val adaptor = new NodeHandleActorAdaptor(nodeHandle, endpoint)
+      adaptor.start()
+      adaptor ! ActorEnvelope(host, RequestTransfer(nodeHandle.getId.asInstanceOf[rice.pastry.Id]))
 //      backupNodes += nodeHandle
-    } //else {
+    } else {
     // backupNodes -= nodeHandle
-    //}
+      println("Node left: " + nodeHandle)
+    }
   }
 
   override def deliver(id: Id, message: Message) {
     message match {
-      case Envelope(sender, contents) => new NodeHandleActorAdaptor(sender, host, contents, endpoint).start()
+      case Envelope(sender, contents) => {
+        val adaptor = new NodeHandleActorAdaptor(sender, endpoint)
+        adaptor.start()
+        adaptor ! ActorEnvelope(host, contents)
+      }
       case h : HeartBeat => host ! h
+      case m : HostingStarted => host ! m
       case m: Message => println("Received message without envelope: " + m.toString)
     }
   }
@@ -81,17 +88,23 @@ class PastryActor(node: PastryNode) extends Application with Actor {
   }
 }
 
-class NodeHandleActorAdaptor(sender: NodeHandle, target: Actor, message: Any, endpoint: Endpoint) extends Actor {
-  target ! message
+class NodeHandleActorAdaptor(sender: NodeHandle, endpoint: Endpoint) extends Actor {
 
   override def act {
     loop {
       react {
-        case m: Message => endpoint.route(null, m, sender)
+        case m: Message => {
+          println("Routing reply: " + m + " to " + sender)
+          endpoint.route(null, m, sender)
+        }
+        case ActorEnvelope(target, message) => target ! message
+        case x => println("Adapter got: " + x)
       }
     }
   }
 }
+
+case class ActorEnvelope(target:Actor, message:Any)
 
 case class Envelope(sender: NodeHandle, message: Message) extends Message {
   override def getPriority: Int = {

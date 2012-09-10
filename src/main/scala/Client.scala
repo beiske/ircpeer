@@ -1,7 +1,7 @@
 import actors.Actor
 import collection.JavaConverters.asJavaCollectionConverter
 import java.io.InputStreamReader
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress}
 import java.nio.CharBuffer
 import java.nio.charset.Charset
 import java.util.regex.Pattern
@@ -257,7 +257,9 @@ object Client extends App {
   val changeChannel = createSingleArgPattern("changeChannel")
   val me = createSingleArgPattern("me")
 
-
+  if (args.length >= 5) {
+    Factories.bootAddress = new InetSocketAddress(InetAddress.getByName(args(3), Integer.valueOf(args(4))))
+  }
   if (args.length >= 3) {
     Factories.setBindPort(Integer.valueOf(args(2)))
   }

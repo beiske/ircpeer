@@ -124,19 +124,70 @@ class Log() extends Serializable {
 
 abstract class LogEntry() extends Serializable {
   val date = new util.Date()
+  def toString(channel:String) : String
 }
-case class LogMessage(nick: String, message:String) extends LogEntry
-case class LogUserInfo(users: Array[String]) extends LogEntry
-case class LogUserJoined(user: String) extends LogEntry
-case class LogAction(user: String, action: String) extends LogEntry
-case class LogNotice(user: String, notice: String) extends LogEntry
-case class LogPart(user:String) extends LogEntry
-case class LogNickChange(oldNick : String, newNick: String) extends LogEntry
-case class LogKick(kickerNick: String, recipient: String, reason: String) extends LogEntry
-case class LogQuit(user : String, reason: String) extends LogEntry
-case class LogTopic(topic: String) extends LogEntry
-case class LogMode(user: String, mode: String) extends LogEntry
-case class LogInvite(senderNick: String, channel: String) extends LogEntry
+case class LogMessage(nick: String, message:String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + " : " + nick + "> " + message
+  }
+}
+case class LogUserInfo(users: Array[String]) extends LogEntry {
+  def toString(channel:String) : String = {
+    val result = new StringBuilder(channel + ": ")
+    users.addString(result, ", ")
+    result.toString
+  }
+}
+case class LogUserJoined(user: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    user + " joined " + channel
+  }
+}
+case class LogAction(user: String, action: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + " : * " + user + " " + action
+  }
+}
+case class LogNotice(user: String, notice: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + " : " + user + " > " + notice
+  }
+}
+case class LogPart(user:String) extends LogEntry {
+  def toString(channel:String) : String = {
+    user + " left " + channel
+  }
+}
+case class LogNickChange(oldNick : String, newNick: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    oldNick + " is now know as " + newNick
+  }
+}
+case class LogKick(kickerNick: String, recipient: String, reason: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + ": " + recipient + " was kicked by " + kickerNick + " becuase: " + reason
+  }
+}
+case class LogQuit(user : String, reason: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    user + " quit: " + reason
+  }
+}
+case class LogTopic(topic: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + " now has topic: " + topic
+  }
+}
+case class LogMode(user: String, mode: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    channel + ": " + user + " set mode " + mode
+  }
+}
+case class LogInvite(senderNick: String, channel: String) extends LogEntry {
+  def toString(channel:String) : String = {
+    senderNick + " invites you to join " + channel
+  }
+}
 
 
 
@@ -152,6 +203,12 @@ case class RequestHostingStart(override val user :UserID, log : Option[Log], cha
 
 }
 
+case class HostingStarted(user : UserID) extends Message {
+  override def getPriority :Int = {
+    Message.MEDIUM_PRIORITY
+  }
+}
+
 case class RequestTransfer(id : Id)
 
 case class RequestHostingEnd(override val user :UserID) extends MessageToUserResponsible(user)
@@ -160,7 +217,7 @@ object Factories {
   val environment = new Environment()
   val idFactory = new PastryIdFactory(environment)
   var bindPort = 9000
-  val bootAddress = new InetSocketAddress(InetAddress.getLocalHost, 9000)
+  var bootAddress = new InetSocketAddress(InetAddress.getLocalHost, 9000)
 
   var nodeFactory :PastryNodeFactory = new SocketPastryNodeFactory(null, InetAddress.getLocalHost, bindPort, environment);
   val randomNodeIdFactory = new RandomNodeIdFactory(environment)
